@@ -6,8 +6,9 @@ const mongoDB = 'mongodb://127.0.0.1/aqbao';
 mongoose.connect(mongoDB,{ useNewUrlParser: true } );
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
-
-db.on("error",console.error.bind(console,'MongoDB 连接错误:'));
+db.on("error",function(err){
+  console.log(err);
+});
 const IAQData = require('./model/model_aq');
 
 const SerialPort = require('serialport')
@@ -25,15 +26,38 @@ const parser = port.pipe(new Delimiter({ delimiter: 'BM' }))
 parser.on('data', function(d){
   let iAqData = new IAQData
   // const json = JSON.stringify(d)
-  const length = d.readUInt16BE(0)
+  const frameLength = d.readUInt16BE(0)
   // 瞬时空气质量
   let iaq = []
-  for(let i=2; i<=(length+1); i=i+2){
+  for(let i=2; i<=(frameLength+1); i=i+2){
       iaq.push(d.readUInt16BE(i))
   }
-  // iAqData.iAqData = 
+  // 如果获取数据不等于协议规定的帧长度
+  if (iaq.length !== frameLength/2) return
+  // 保存数据
+  iAqData.aq = iaq
+  iAqData.save(function(err){
+    if (err) return
+    console.log('保存成功');
+  })
   console.log(iaq)
-    
 })
 
+app.listen(3000)
 
+// 中间件:响应头设置
+app.use('/', (req, res, next) => {
+  res.set("Access-Control-Allow-Methods", "*");
+  next();
+});
+
+app.get('/api/history', function (req, res) {
+  IAQData.find({
+    time: {$gte: Date(req.query.min), $lte: Date(req.query.max)}
+  },
+  'aq time' ,
+  function (err, doc) {
+    if (err) res.sendStatus(404)
+    res.status(200).json(doc)
+  })
+})

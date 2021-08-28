@@ -1,6 +1,8 @@
+const mongoose = require('mongoose');
 var schema = new mongoose.Schema({ 
     time: {
-        type: String,
+        index: true,
+        type: Date,
         default: Date.now
     }, 
     aq: {

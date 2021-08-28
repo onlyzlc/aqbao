@@ -10,9 +10,12 @@
 // @ is an alias to /src
 import Chart from '../components/chart.vue'
 const now = new Date()
+const lastNightTime = new Date()
+lastNightTime.setDate(now.getDate() - 1)
+lastNightTime.setHours(20, 0, 0)
 const timePeriodOption = {
   realtime: [Date() - 60000, Date()],
-  lastNight: [new Date(now - 24 * 3600 * 1000).setHours(20, 0, 0), now.setHours(20, 0, 0)]
+  lastNight: [lastNightTime.getTime(), now.setHours(20, 0, 0)]
 }
 // const fackData = require(fackData.js)
 export default {
@@ -40,7 +43,7 @@ export default {
         '湿度 单位：％'
       ],
       room: '',
-      timePeriod: timePeriodOption.realtime,
+      timePeriod: timePeriodOption.lastNight,
       rawData: [],
       timeLine: [],
       datasets: []
@@ -54,7 +57,15 @@ export default {
   },
   methods: {
     fetchData () {
-      this.rawData = require('./fakedata')
+      // this.rawData = require('./fakedata')
+      this.axios.get(`history?min=${this.timePeriod[0]}&max=${this.timePeriod[1]}`)
+        .then((response) => {
+          console.log('获取到%s条数据', response.data.length)
+          this.rawData = response.data
+          this.rawDataParse()
+        })
+    },
+    rawDataParse () {
       this.rawData.forEach(element => {
         this.timeLine.push(element.time)
         element.aq.forEach((aqItem, index) => {
