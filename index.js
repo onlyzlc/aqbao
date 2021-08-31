@@ -13,14 +13,23 @@ const IAQData = require('./model/model_aq');
 
 const SerialPort = require('serialport')
 const Delimiter = require('@serialport/parser-delimiter');
+
 const port = new SerialPort('COM3', {
   baudRate: 9600
 })
 
 // Open errors will be emitted as an error event
 port.on('error', function(err) {
-    console.log('Error: ', err.message)
-  })
+  console.log('Error: ', err.message)
+  // let timer = setTimeout(retry, 1000)
+})
+
+// function retry () {
+//   port.open( function (err) {
+//     console.log('串口已打开');
+//     clearTimeout(timer)
+//   })
+// }
 
 const parser = port.pipe(new Delimiter({ delimiter: 'BM' }))
 parser.on('data', function(d){
@@ -34,8 +43,11 @@ parser.on('data', function(d){
   }
   // 如果获取数据不等于协议规定的帧长度
   if (iaq.length !== frameLength/2) return
+  if (iaq[13]) iaq[13] = iaq[13] / 10
+  if (iaq[14]) iaq[14] = iaq[14] / 10
   // 保存数据
   iAqData.aq = iaq
+  iAqData.time = new Date()
   iAqData.save(function(err){
     if (err) return
     console.log('保存成功');
@@ -53,7 +65,7 @@ app.use('/', (req, res, next) => {
 
 app.get('/api/history', function (req, res) {
   IAQData.find({
-    time: {$gte: Date(req.query.min), $lte: Date(req.query.max)}
+    time: {$gte: req.query.min, $lte: req.query.max}
   },
   'aq time' ,
   function (err, doc) {

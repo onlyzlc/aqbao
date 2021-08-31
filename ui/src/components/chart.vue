@@ -15,6 +15,7 @@ export default {
       // value: [12, 19, 3, 5, 2, 3]
     }
   },
+  // 分配随机ID
   beforeMount () {
     this.elid = 'lnchart' + (10000 * Math.random().toFixed(4)).toString()
   },
@@ -37,7 +38,7 @@ export default {
         elements: {
           line: {
             tension: 0.1,
-            borderWidth: 2,
+            borderWidth: 3,
             borderColor: 'rgba(153, 102, 255, 1)'
           },
           point: {
@@ -52,8 +53,11 @@ export default {
             type: 'time',
             time: {
               unit: 'minute',
-              stepSize: 10,
-              tooltipFormat: 'YY-M-D h:m:s'
+              // stepSize: 20,
+              tooltipFormat: 'M-D HH:mm:ss',
+              displayFormats: {
+                hour: 'M-D HH:mm'
+              }
             },
             max: this.prop.max,
             min: this.prop.min
