@@ -10,68 +10,72 @@ export default {
   props: ['prop'],
   data () {
     return {
-      elid: ''
-      // labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-      // value: [12, 19, 3, 5, 2, 3]
+      elid: '',
+      chart: {},
+      config: {
+        type: 'line',
+        data: {
+          labels: this.prop.labels,
+          datasets: this.prop.datasets
+        },
+        options: {
+          // 延迟刷新
+          resizeDelay: 300,
+          // 这里统一调整点线等元素样式
+          elements: {
+            line: {
+              tension: 0.1,
+              borderWidth: 2,
+              borderColor: [
+                'rgba(38, 70, 83, 1)',
+                'rgba(42, 157, 143, 1)',
+                'rgba(233, 196, 106, 1)',
+                'rgba(244, 162, 97, 1)',
+                'rgba(231, 111, 81, 1)',
+                'rgba(120, 32, 23, 1)'
+              ]
+            },
+            point: {
+              radius: 0
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            },
+            x: {
+              type: 'time',
+              time: {
+                unit: 'minute',
+                tooltipFormat: 'M-D HH:mm:ss',
+                displayFormats: {
+                  hour: 'M-D HH:mm',
+                  minute: 'HH:mm'
+                }
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: this.prop.title
+            }
+          }
+        }
+      }
     }
   },
   // 分配随机ID
   beforeMount () {
     this.elid = 'lnchart' + (10000 * Math.random().toFixed(4)).toString()
   },
+  watch: {
+    prop: function () {
+      this.chart.update('normal')
+    }
+  },
   mounted () {
-    // 颜色选取
-    var myChart = new Chart(this.elid, {
-      type: 'line',
-      data: {
-        labels: this.prop.labels,
-        datasets: [{
-          // label: '# of Votes',
-          data: this.prop.value,
-          borderColor: 'rgba(255, 99, 132, 1)'
-        }]
-      },
-      options: {
-        // 延迟刷新
-        resizeDelay: 300,
-        // 这里统一调整点线等元素样式
-        elements: {
-          line: {
-            tension: 0.1,
-            borderWidth: 3,
-            borderColor: 'rgba(153, 102, 255, 1)'
-          },
-          point: {
-            radius: 0
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          },
-          x: {
-            type: 'time',
-            time: {
-              unit: 'minute',
-              // stepSize: 20,
-              tooltipFormat: 'M-D HH:mm:ss',
-              displayFormats: {
-                hour: 'M-D HH:mm'
-              }
-            },
-            max: this.prop.max,
-            min: this.prop.min
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: this.prop.title
-          }
-        }
-      }
-    })
-    myChart.update('none')
+    this.chart = new Chart(this.elid, this.config)
   }
 }
 </script>
