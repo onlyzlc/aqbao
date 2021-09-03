@@ -30,12 +30,7 @@
 </template>
 
 <script>
-// @ is an alias to /src
-import Chart from '../components/chart.vue'
-// const today = new Date()
-// const lastNightTime = new Date()
-// lastNightTime.setDate(today.getDate() - 1)
-
+import Chart from '../components/chart'
 export default {
   name: 'Home',
   components: {
