@@ -1,17 +1,21 @@
 <template>
-    <div>
+    <div id='chartBox'>
         <canvas :id='elid'></canvas>
     </div>
 </template>
 <script>
 import Chart from 'chart.js/auto'
 import 'chartjs-adapter-moment'
+const chartBox = document.getElementById('chartBox')
+var chart = document.createElement('canvas')
+chart.id = 'lnchart' + (10000 * Math.random().toFixed(4)).toString()
+chartBox.appendChild(chart)
 export default {
   props: ['prop'],
   data () {
     return {
       elid: '',
-      chart: {},
+      // chart: {},
       config: {
         type: 'line',
         data: {
@@ -71,11 +75,11 @@ export default {
   },
   watch: {
     prop: function () {
-      this.chart.update('normal')
+      chart.update('normal')
     }
   },
   mounted () {
-    this.chart = new Chart(this.elid, this.config)
+    chart = new Chart(this.elid, this.config)
   }
 }
 </script>
