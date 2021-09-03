@@ -1,7 +1,10 @@
 <template>
-    <div id='chartBox'>
+  <div>
+    <div id='chartBox' v-show="prop.data.labels.length">
         <canvas :id='elid'></canvas>
     </div>
+    <p v-if="prop.data.labels.length == 0">无数据</p>
+  </div>
 </template>
 <script>
 import Chart from 'chart.js/auto'
@@ -39,9 +42,7 @@ export default {
           },
           scales: {
             y: {
-              beginAtZero: true,
-              suggestedMin: 0,
-              suggestedMax: 30
+              beginAtZero: true
             },
             x: {
               type: 'time',

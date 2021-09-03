@@ -1,7 +1,8 @@
 <template>
   <div class="home">
-    <div>
+    <div class="filter">
       <section>
+        <strong>时段:</strong>
         <label><input type="radio" name="timePeriod" value="realtime" v-model="timePeriod">实时</label>
         <label><input type="radio" name="timePeriod" value="lastNight" v-model="timePeriod" title="昨晚8点到今早8点">昨晚</label>
         <label><input type="radio" name="timePeriod" value="1day" v-model="timePeriod">最近24小时</label>
@@ -14,16 +15,10 @@
           <button @click="search">查询</button>
         </span>
       </section>
-    </div>
-    <div>
       <section>
-        <label><input type="radio" name="type" value="0" v-model="active">PM1.0</label>
-        <label><input type="radio" name="type" value="1" v-model="active">PM2.5</label>
-        <label><input type="radio" name="type" value="2" v-model="active">PM10</label>
-        <label><input type="radio" name="type" value="3" v-model="active">100ml空气颗粒物个数</label>
-        <label><input type="radio" name="type" value="4" v-model="active">甲醛</label>
-        <label><input type="radio" name="type" value="5" v-model="active">温度</label>
-        <label><input type="radio" name="type" value="6" v-model="active">湿度</label>
+        <strong>指标参数:</strong>
+        <label v-for="(item, index) in chartGroups" :key='index'>
+          <input type="radio" name="type" :value="index" v-model="active">{{chartGroups[index].groupTitle}}</label>
       </section>
     </div>
     <div class="box">
@@ -41,7 +36,7 @@ export default {
   },
   data () {
     return {
-      // 空气质量指数顺序定义，根据传感器协议定义
+      // 根据传感器协议定义空气质量参数顺序
       itemDataDefine: [
         'PM1.0 浓度（CF=1，标准颗粒物）单位μg/m3',
         'PM2.5 浓度（CF=1，标准颗粒物）单位μg/m3',
@@ -67,19 +62,16 @@ export default {
       // suggested: 建议值范围, [0,0]等同于无建议
       chartGroups: [
         {
-          groupTitle: 'PM1.0',
-          dataIndex: [0, 3],
-          suggested: [0, 0]
+          groupTitle: '<PM10(大气环境)',
+          dataIndex: [3, 4, 5],
+          suggested: [0, 150],
+          stacked: true
         },
         {
-          groupTitle: 'PM2.5',
-          dataIndex: [1, 4],
-          suggested: [0, 0]
-        },
-        {
-          groupTitle: 'PM10',
-          dataIndex: [2, 5],
-          suggested: [0, 0]
+          groupTitle: '<PM10(工业环境)',
+          dataIndex: [0, 1, 2],
+          suggested: [0, 0],
+          stacked: true
         },
         {
           groupTitle: '100ml空气颗粒物个数',
@@ -94,7 +86,7 @@ export default {
         {
           groupTitle: '温度',
           dataIndex: [13],
-          suggested: [0, 0]
+          suggested: [0, 40]
         },
         {
           groupTitle: '湿度',
@@ -159,8 +151,8 @@ export default {
           labels: this.timeLine,
           datasets: datasets
         },
-        suggestedMin: chart.suggested[0] || null,
-        suggestedMax: chart.suggested[1] || null
+        suggestedMin: chart.suggested[0],
+        suggestedMax: chart.suggested[1]
       }
     }
   },
@@ -219,6 +211,8 @@ export default {
   .home {
     /* display: flex; */
     /* flex-flow: row wrap; */
+    width: 80%;
+    margin: auto;
   }
   .box {
     /* position: relative;
