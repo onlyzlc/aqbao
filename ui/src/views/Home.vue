@@ -3,7 +3,10 @@
     <div>
       <section>
         <label><input type="radio" name="timePeriod" value="realtime" v-model="timePeriod">实时</label>
-        <label><input type="radio" name="timePeriod" value="lastNight" v-model="timePeriod">昨晚</label>
+        <label><input type="radio" name="timePeriod" value="lastNight" v-model="timePeriod" title="昨晚8点到今早8点">昨晚</label>
+        <label><input type="radio" name="timePeriod" value="1day" v-model="timePeriod">最近24小时</label>
+        <label><input type="radio" name="timePeriod" value="7days" v-model="timePeriod">最近7天</label>
+        <label><input type="radio" name="timePeriod" value="30days" v-model="timePeriod">最近30天</label>
         <label><input type="radio" name="timePeriod" value="customize" v-model="timePeriod">自定义</label>
         <span v-show="timePeriod === 'customize'">
           <input type="datetime-local" v-model="customize_input[0]">
@@ -24,7 +27,7 @@
       </section>
     </div>
     <div class="box">
-      <chart :prop="chartDatas"/>
+      <chart :prop="chartProp"/>
     </div>
   </div>
 </template>
@@ -56,41 +59,47 @@ export default {
         '温度 单位：℃',
         '湿度 单位：％'
       ],
-      suggestedMin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -10, 20],
-      suggestedMax: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 150, 50, 100],
       // 每一组图表的定义
       // 类别
       active: 0,
       // category: 类型名称
-      // dataIndex: 数据源配置映射(每一个图表取那几组数据)
+      // dataIndex: 数据源配置映射(每一个图表取协议中的哪几个指标参数)
+      // suggested: 建议值范围, [0,0]等同于无建议
       chartGroups: [
         {
           groupTitle: 'PM1.0',
-          dataIndex: [0, 3]
+          dataIndex: [0, 3],
+          suggested: [0, 0]
         },
         {
           groupTitle: 'PM2.5',
-          dataIndex: [1, 4]
+          dataIndex: [1, 4],
+          suggested: [0, 0]
         },
         {
           groupTitle: 'PM10',
-          dataIndex: [2, 5]
+          dataIndex: [2, 5],
+          suggested: [0, 0]
         },
         {
           groupTitle: '100ml空气颗粒物个数',
-          dataIndex: [6, 7, 8, 9, 10, 11]
+          dataIndex: [6, 7, 8, 9, 10, 11],
+          suggested: [0, 0]
         },
         {
           groupTitle: '甲醛浓度',
-          dataIndex: [12]
+          dataIndex: [12],
+          suggested: [0, 100]
         },
         {
           groupTitle: '温度',
-          dataIndex: [13]
+          dataIndex: [13],
+          suggested: [0, 0]
         },
         {
           groupTitle: '湿度',
-          dataIndex: [14]
+          dataIndex: [14],
+          suggested: [0, 0]
         }
       ],
       room: '',
@@ -113,31 +122,45 @@ export default {
     }
   },
   computed: {
+    // 时段区间毫秒表示
     timePeriodMs () {
       const now = new Date()
       const lastNightTime = new Date()
       lastNightTime.setDate(lastNightTime.getDate() - 1)
       switch (this.timePeriod) {
         case 'realtime':
-          return [now.setHours(now.getHours() - 1), Date.now()]
+          return [(new Date()).setHours(now.getHours() - 1), Date.now()]
         case 'lastNight':
-          return [lastNightTime.setHours(20, 0, 0), now.setHours(8, 0, 0)]
+          return [lastNightTime.setHours(20, 0, 0), (new Date()).setHours(8, 0, 0)]
+        case '1day':
+          return [(new Date()).setDate(now.getDate() - 1), Date.now()]
+        case '7days':
+          return [(new Date()).setDate(now.getDate() - 7), Date.now()]
+        case '30days':
+          return [(new Date()).setDate(now.getDate() - 30), Date.now()]
         case 'customize':
           return [(new Date(this.customize_input[0])).getTime(), (new Date(this.customize_input[1])).getTime()]
       }
       return [0, 0]
     },
     // 按图表展示方式将数据条拼合
-    chartDatas () {
+    chartProp () {
+      // chart指当前激活图表的配置信息
       const chart = this.chartGroups[this.active]
+      // 图表各个系列的数据集集合
       const datasets = []
+      // 根据当前图表配置的数据指针汇聚
       chart.dataIndex.forEach(el => {
         datasets.push(this.itemDatasets[el])
       })
       return {
         title: chart.groupTitle,
-        labels: this.timeLine,
-        datasets: datasets
+        data: {
+          labels: this.timeLine,
+          datasets: datasets
+        },
+        suggestedMin: chart.suggested[0] || null,
+        suggestedMax: chart.suggested[1] || null
       }
     }
   },
@@ -156,8 +179,8 @@ export default {
     this.fetchData()
   },
   methods: {
+    // 获取数据
     fetchData () {
-      // this.rawData = require('./fakedata')
       this.axios.get(`history?min=${this.timePeriodMs[0]}&max=${this.timePeriodMs[1]}`)
         .then((response) => {
           console.log('获取到%s条数据', response.data.length)
@@ -165,19 +188,23 @@ export default {
           this.rawDataParse()
         })
     },
+    // 数据清空
     dateReset () {
       this.timeLine = []
       this.itemDatasets.forEach(element => { element.data = [] })
     },
+    // 解析原始数据,行列转换
     rawDataParse () {
       this.dateReset()
       this.rawData.forEach(element => {
+        // element预期格式为: {time:date,aq:[]}
         this.timeLine.push(element.time)
         element.aq.forEach((aqItem, index) => {
           if (index >= this.itemDatasets.length) return
           this.itemDatasets[index].data.push(aqItem)
         }, this)
       }, this)
+      console.log('解析原始数据,时间轴长度: %s', this.timeLine.length)
     },
     search () {
       // 输入框校验
@@ -195,7 +222,7 @@ export default {
   }
   .box {
     /* position: relative;
-    height: 200px; */
+    height: 100px; */
     /* max-width: 1200px; */
     width: 100%;
   }

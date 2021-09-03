@@ -6,25 +6,19 @@
 <script>
 import Chart from 'chart.js/auto'
 import 'chartjs-adapter-moment'
-const chartBox = document.getElementById('chartBox')
-var chart = document.createElement('canvas')
-chart.id = 'lnchart' + (10000 * Math.random().toFixed(4)).toString()
-chartBox.appendChild(chart)
+// var chartDom, chart
 export default {
   props: ['prop'],
   data () {
     return {
       elid: '',
-      // chart: {},
+      chart: {},
       config: {
         type: 'line',
-        data: {
-          labels: this.prop.labels,
-          datasets: this.prop.datasets
-        },
+        // data: this.prop.data,
         options: {
           // 延迟刷新
-          resizeDelay: 300,
+          resizeDelay: 500,
           // 这里统一调整点线等元素样式
           elements: {
             line: {
@@ -45,12 +39,14 @@ export default {
           },
           scales: {
             y: {
-              beginAtZero: true
+              beginAtZero: true,
+              suggestedMin: 0,
+              suggestedMax: 30
             },
             x: {
               type: 'time',
               time: {
-                unit: 'minute',
+                // unit: 'minute',
                 tooltipFormat: 'M-D HH:mm:ss',
                 displayFormats: {
                   hour: 'M-D HH:mm',
@@ -61,8 +57,8 @@ export default {
           },
           plugins: {
             title: {
-              display: true,
-              text: this.prop.title
+              display: true
+              // text: this.prop.title
             }
           }
         }
@@ -75,11 +71,16 @@ export default {
   },
   watch: {
     prop: function () {
-      chart.update('normal')
+      // 不知为何没有自动更新数据,这里只能手动再赋值一次
+      this.config.data = this.prop.data
+      this.config.options.plugins.title.text = this.prop.title
+      this.config.options.scales.y.suggestedMin = this.prop.suggestedMin
+      this.config.options.scales.y.suggestedMax = this.prop.suggestedMax
+      this.chart.update('normal')
     }
   },
   mounted () {
-    chart = new Chart(this.elid, this.config)
+    this.chart = new Chart(this.elid, this.config)
   }
 }
 </script>
