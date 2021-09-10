@@ -102,7 +102,7 @@ export default {
       rawData: [],
       // 最终展示数据，将时间数组单独存放，因为所有图表共用一个时间轴
       // 将采集数值按协议
-      // timeLine = [t1,t2,...]
+      // timeLine = [t1,t2,...]00000000000
       timeLine: [],
       // itemDatasets = [
       //  {label: '采集项a',
@@ -177,6 +177,17 @@ export default {
         .then((response) => {
           console.log('获取到%s条数据', response.data.length)
           this.rawData = response.data
+          this.rawDataParse()
+        })
+    },
+    // 获取最新一条数据,并解析入栈到数据集中
+    fetchLastData () {
+      this.axios.get(`lastData`)
+        .then((response) => {
+          const lastData = response.data
+          console.log('获取到%s的数据', lastData.time)
+          this.rawData.shift()
+          this.rawData.push(lastData)
           this.rawDataParse()
         })
     },
